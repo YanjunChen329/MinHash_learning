@@ -47,4 +47,4 @@ print(dim)
 print(label_size)
 
 with open("dim.txt", "w+") as infile:
-    infile.write(dim)
+    infile.write(str(dim + 1))

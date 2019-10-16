@@ -20,14 +20,14 @@ testX_name = join(cur_dir, "data", "test_X.txt")
 out_trainX = join(cur_dir, "data", "train_mh{}_X.txt".format(K))
 out_testX = join(cur_dir, "data", "test_mh{}_X.txt".format(K))
 
-print(K, D)
+print("K={}; D={}".format(K, D))
 
 def generate_minhash(name, X_file, out_file):
-    counter = 0
+    counter = 1
     with open(X_file, "r+") as infile, open(out_file, "w+") as outfile:
         print(name)
         for line in infile:
-            sys.stdout.write("\rGenerating {}%".format(counter))
+            sys.stdout.write("\rGenerating {}".format(counter))
             sys.stdout.flush()
             data = line.split(",")
             signatures = DMH.get_hashed(data)
@@ -35,7 +35,6 @@ def generate_minhash(name, X_file, out_file):
             outfile.write(newline + "\n")
             counter += 1
         print()
-    print(counter)
 
 generate_minhash("Training Set", trainX_name, out_trainX)
 generate_minhash("Testing Set", testX_name, out_testX)
