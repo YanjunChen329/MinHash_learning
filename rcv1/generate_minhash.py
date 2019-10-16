@@ -10,7 +10,7 @@ from densified_minhash.densified_minhash import Densified_MinHash
 # get K
 K = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
 # get D
-with open(join(cur_dir, "dim.txt"), "r+") as infile:
+with open(join(cur_dir, "data", "dim.txt"), "r+") as infile:
     D = int(infile.readline())
 
 DMH = Densified_MinHash(K=K, D=D)
