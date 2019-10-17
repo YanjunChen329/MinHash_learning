@@ -79,7 +79,6 @@ def train(data_files, dim, model, record_files):
             loss_list.append(loss.data)
             print('Epoch: ', epoch, '| Iteration: ', iteration, '| train loss: %.4f' % loss.data,
                   '| train accuracy: %.2f' % train_accuracy)
-            break
 
         valid_acc, valid_loss = validation(model, validation_dataloader, loss_func)
         valacc_list.append(valid_acc)
