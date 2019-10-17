@@ -76,7 +76,7 @@ def train(data_files, dim, model, record_files=None):
             loss.backward()
             optimizer.step()
 
-            training_time += time.time() - start
+            training_time += time.clock() - start
             _, predicted = torch.max(output.data, 1)
             train_accuracy = (predicted == y.data).sum().item() / y.data.shape[0]
             acc_list.append(train_accuracy)
