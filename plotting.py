@@ -20,14 +20,14 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
         baseline_val = np.loadtxt(join(record_dir, "val_{}_L{}.txt".format(metric, L)))
         plt.plot(np.arange(1, baseline_acc.shape[0] + 1), baseline_acc, label="Train(baseline)", color="r")
         plt.plot(np.arange(1, baseline_val.shape[0] + 1), baseline_val, label="Test(baseline)", color="g")
-        fig_name = join(record_dir, "{}_L{}.png".format(metric, L))
+        fig_name = join(record_dir, "pic_{}_L{}.png".format(metric, L))
 
     for k in K_arr:
         acc = np.loadtxt(join(record_dir, "{}_K{}_L{}.txt".format(metric, k, L)))
         val_acc = np.loadtxt(join(record_dir, "val_{}_K{}_L{}.txt".format(metric, k, L)))
         plt.plot(np.arange(1, acc.shape[0] + 1), acc, label="Train(K={})".format(k))
         plt.plot(np.arange(1, val_acc.shape[0] + 1), val_acc, label="Test(K={})".format(k))
-        fig_name = join(record_dir, "{}_K{}_L{}.txt".format(metric, k, L))
+        fig_name = join(record_dir, "pic_{}_K{}_L{}.txt".format(metric, k, L))
 
     plt.title(title)
     plt.xlabel("Epoch")
