@@ -137,7 +137,7 @@ def validation(model, validation_dataloader, loss_func):
 
 
 if __name__ == '__main__':
-    print("dataset={}; MH={}; K={}; L={}; epoch={}; batch_size={}".format(dataset, MH, K, L, EPOCH, BATCH_SIZE))
+    print("dataset={}; asycn={}; MH={}; K={}; L={}; epoch={}; batch_size={}".format(dataset, async, MH, K, L, EPOCH, BATCH_SIZE))
 
     #########################################
     print("***** prepare model ******")
@@ -160,6 +160,7 @@ if __name__ == '__main__':
     if not async:
         train(data_dirs, D, model, time_file, record_dirs)
     else:
+        mp.set_start_method('spawn')
         num_processes = 4
         model.share_memory()
         processes = []
