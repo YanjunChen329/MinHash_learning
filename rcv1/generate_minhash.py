@@ -17,8 +17,8 @@ DMH = Densified_MinHash(K=K, D=D)
 
 trainX_name = join(cur_dir, "data", "train_X.txt")
 testX_name = join(cur_dir, "data", "test_X.txt")
-out_trainX = join(cur_dir, "data", "train_mh{}_X.txt".format(K))
-out_testX = join(cur_dir, "data", "test_mh{}_X.txt".format(K))
+out_trainX = join(cur_dir, "data", "train_K{}_X.txt".format(K))
+out_testX = join(cur_dir, "data", "test_K{}_X.txt".format(K))
 
 print("K={}; D={}".format(K, D))
 
