@@ -97,12 +97,12 @@ def train(data_files, dim, model, record_files=None):
             np.savetxt(loss_name, loss_list)
             np.savetxt(valloss_name, valloss_list)
 
-            with open(time_name, 'a+') as outfile:
-                if MH:
-                    outfile.write("K={},   L={}, epoch={} | time={}\n".format(K, L, epoch, time))
-                else:
-                    outfile.write("Baseline, L={}, epoch={} | time={}\n".format(L, epoch, time))
-
+    if record_files is not None:
+        with open(time_name, 'a+') as outfile:
+            if MH:
+                outfile.write("K={},   L={}, epoch={} | time={}\n".format(K, L, EPOCH, training_time))
+            else:
+                outfile.write("Baseline, L={}, epoch={} | time={}\n".format(L, EPOCH, training_time))
 
 
 def validation(model, validation_dataloader, loss_func):

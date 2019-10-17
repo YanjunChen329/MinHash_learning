@@ -21,7 +21,7 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
 
         step = int(baseline_acc.shape[0] / baseline_val.shape[0])
         train_axis = np.arange(1, baseline_acc.shape[0] + 1)
-        val_axis = np.arange(1, baseline_acc.shape[0] + 1, step)
+        val_axis = np.arange(step, baseline_acc.shape[0] + step, step)
 
         plt.plot(train_axis, baseline_acc, label="Train(baseline)", color="r", zorder=1)
         plt.plot(val_axis, baseline_val, label="Test(baseline)", color="g", zorder=2)
@@ -33,7 +33,7 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
 
         step = int(acc.shape[0] / val_acc.shape[0])
         train_axis = np.arange(1, baseline_acc.shape[0] + 1)
-        val_axis = np.arange(1, baseline_acc.shape[0] + 1, step)
+        val_axis = np.arange(step, baseline_acc.shape[0] + step, step)
 
         plt.plot(train_axis, acc, label="Train(K={})".format(k), zorder=1)
         plt.plot(val_axis, val_acc, label="Test(K={})".format(k), zorder=2)
