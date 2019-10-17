@@ -14,6 +14,7 @@ results = parser.parse_args()
 def plot_experiment(K_arr, L, metric="acc", baseline=True):
     title = "{} (Layer={})".format(metric, L)
     record_dir = join(cur_dir, "rcv1", "record")
+    fig = plt.figure(figsize=(15, 5))
 
     if baseline:
         baseline_acc = np.loadtxt(join(record_dir, "{}_L{}.txt".format(metric, L)))
@@ -42,7 +43,7 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
     plt.title(title)
     plt.xlabel("Iteration")
     plt.legend()
-    plt.savefig(fig_name, bbox_inches='tight')
+    fig.savefig(fig_name, bbox_inches='tight')
     plt.close()
 
 

@@ -1,6 +1,7 @@
 import torch
 torch.manual_seed(0)
 from torch import nn
+import torch.multiprocessing as mp
 import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
@@ -15,6 +16,7 @@ cur_dir = dirname(abspath(__file__))
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--async', action="store", dest="async", type=bool, default=False)
 parser.add_argument('--MH', action="store", dest="MH", type=bool, default=False)
 parser.add_argument('--K', action="store", dest="K", type=int, default=1000)
 parser.add_argument('--L', action="store", dest="L", type=int, default=3)
@@ -29,6 +31,7 @@ results = parser.parse_args()
 # Global variables & Hyper-parameters
 # ===========================================================
 dataset = results.dataset
+async = results.async
 MH = results.MH
 K = results.K
 L = results.L
@@ -40,14 +43,14 @@ with open(join(cur_dir, dataset, "data", "dim.txt"), "r+") as infile:
     D = int(infile.readline())
 
 
-def train(data_files, dim, model, record_files=None):
+def train(data_files, dim, model, time_file=None, record_files=None):
     # ===========================================================
     # Prepare train dataset & test dataset
     # ===========================================================
     print("***** prepare data ******")
     X_train, y_train, X_test, y_test = data_files
     if record_files is not None:
-        acc_name, valacc_name, loss_name, valloss_name, time_name = record_files
+        acc_name, valacc_name, loss_name, valloss_name = record_files
 
     training_set = Dataset(X_train, y_train, dimension=dim)
     train_dataloader = torch.utils.data.DataLoader(dataset=training_set, batch_size=BATCH_SIZE, shuffle=False)
@@ -79,8 +82,9 @@ def train(data_files, dim, model, record_files=None):
             training_time += time.clock() - start
             _, predicted = torch.max(output.data, 1)
             train_accuracy = (predicted == y.data).sum().item() / y.data.shape[0]
-            acc_list.append(train_accuracy)
-            loss_list.append(loss.data)
+            if iteration % 5:
+                acc_list.append(train_accuracy)
+                loss_list.append(loss.data)
             print('Epoch: ', epoch, '| Iteration: ', iteration, '| train loss: %.4f' % loss.data,
                   '| train accuracy: %.2f' % train_accuracy)
 
@@ -97,12 +101,13 @@ def train(data_files, dim, model, record_files=None):
             np.savetxt(loss_name, loss_list)
             np.savetxt(valloss_name, valloss_list)
 
-    if record_files is not None:
-        with open(time_name, 'a+') as outfile:
+    if time_file is not None:
+        with open(time_file, 'a+') as outfile:
+            prefix = "(ASYNC) " if async else ""
             if MH:
-                outfile.write("K={},   L={}, epoch={} | time={}\n".format(K, L, EPOCH, training_time))
+                outfile.write("{}K={},   L={}, epoch={} | time={}\n".format(prefix, K, L, EPOCH, training_time))
             else:
-                outfile.write("Baseline, L={}, epoch={} | time={}\n".format(L, EPOCH, training_time))
+                outfile.write("{}Baseline, L={}, epoch={} | time={}\n".format(prefix, L, EPOCH, training_time))
 
 
 def validation(model, validation_dataloader, loss_func):
@@ -148,7 +153,19 @@ if __name__ == '__main__':
     data_dirs = list(map(lambda f: join(cur_dir, dataset, "data", f), data_files))
     print(data_files)
     record_files = ["acc{}_L{}.txt".format(fix, L), "val_acc{}_L{}.txt".format(fix, L),
-                    "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L), "time_record.txt"]
+                    "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L)]
+    time_file = join(cur_dir, dataset, "record", "time_record.txt")
     record_dirs = list(map(lambda f: join(cur_dir, dataset, "record", f), record_files))
 
-    train(data_dirs, D, model, record_dirs)
+    if not async:
+        train(data_dirs, D, model, time_file, record_dirs)
+    else:
+        num_processes = 4
+        model.share_memory()
+        processes = []
+        for rank in range(num_processes):
+            p = mp.Process(target=train, args=(data_dirs, D, model, time_file))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
