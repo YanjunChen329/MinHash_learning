@@ -4,11 +4,12 @@ from torch import nn
 import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
-import argparse
 
 from model import FCN
 from dataset import Dataset
 
+import argparse
+import time
 from os.path import dirname, abspath, join
 cur_dir = dirname(abspath(__file__))
 
@@ -18,7 +19,7 @@ parser.add_argument('--MH', action="store", dest="MH", type=bool, default=False)
 parser.add_argument('--K', action="store", dest="K", type=int, default=1000)
 parser.add_argument('--L', action="store", dest="L", type=int, default=3)
 parser.add_argument('--dataset', action="store", dest="dataset", default="rcv1")
-parser.add_argument('--epoch', action="store", dest="epoch", type=int, default=20)
+parser.add_argument('--epoch', action="store", dest="epoch", type=int, default=10)
 parser.add_argument('--batch', action="store", dest="batch_size", type=int, default=100)
 
 results = parser.parse_args()
@@ -39,13 +40,14 @@ with open(join(cur_dir, dataset, "data", "dim.txt"), "r+") as infile:
     D = int(infile.readline())
 
 
-def train(data_files, dim, model, record_files):
+def train(data_files, dim, model, record_files=None):
     # ===========================================================
     # Prepare train dataset & test dataset
     # ===========================================================
     print("***** prepare data ******")
     X_train, y_train, X_test, y_test = data_files
-    acc_name, valacc_name, loss_name, valloss_name = record_files
+    if record_files is not None:
+        acc_name, valacc_name, loss_name, valloss_name, time_name = record_files
 
     training_set = Dataset(X_train, y_train, dimension=dim)
     train_dataloader = torch.utils.data.DataLoader(dataset=training_set, batch_size=BATCH_SIZE, shuffle=False)
@@ -59,10 +61,11 @@ def train(data_files, dim, model, record_files):
     print("***** Train ******")
     acc_list, valacc_list = [], []
     loss_list, valloss_list = [], []
-
+    training_time = 0.
     for epoch in range(EPOCH):
         # Training
         for iteration, (x, y) in enumerate(train_dataloader):
+            start = time.clock()
             model.train()
             x = Variable(x).cuda() if GPU_IN_USE else Variable(x)
             y = Variable(y).cuda() if GPU_IN_USE else Variable(y)
@@ -73,6 +76,7 @@ def train(data_files, dim, model, record_files):
             loss.backward()
             optimizer.step()
 
+            training_time += time.time() - start
             _, predicted = torch.max(output.data, 1)
             train_accuracy = (predicted == y.data).sum().item() / y.data.shape[0]
             acc_list.append(train_accuracy)
@@ -86,11 +90,19 @@ def train(data_files, dim, model, record_files):
         print("Epoch:  {} -- validation accuracy: {} | validation loss: {}".format(epoch, valid_acc, valid_loss))
         print("*" * 50)
 
-        # Saving
-        np.savetxt(acc_name, acc_list)
-        np.savetxt(valacc_name, valacc_list)
-        np.savetxt(loss_name, loss_list)
-        np.savetxt(valloss_name, valloss_list)
+        # Saving records
+        if record_files is not None:
+            np.savetxt(acc_name, acc_list)
+            np.savetxt(valacc_name, valacc_list)
+            np.savetxt(loss_name, loss_list)
+            np.savetxt(valloss_name, valloss_list)
+
+            with open(time_name, 'a+') as outfile:
+                if MH:
+                    outfile.write("K={},   L={}, epoch={} | time={}\n".format(K, L, epoch, time))
+                else:
+                    outfile.write("Baseline, L={}, epoch={} | time={}\n".format(L, epoch, time))
+
 
 
 def validation(model, validation_dataloader, loss_func):
@@ -136,7 +148,7 @@ if __name__ == '__main__':
     data_dirs = list(map(lambda f: join(cur_dir, dataset, "data", f), data_files))
     print(data_files)
     record_files = ["acc{}_L{}.txt".format(fix, L), "val_acc{}_L{}.txt".format(fix, L),
-                    "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L)]
+                    "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L), "time_record.txt"]
     record_dirs = list(map(lambda f: join(cur_dir, dataset, "record", f), record_files))
 
     train(data_dirs, D, model, record_dirs)
