@@ -166,12 +166,12 @@ if __name__ == '__main__':
         processes = []
         all_record_dirs = []
         for p_id in range(num_processes):
-            record_files = ["p{}_acc{}_L{}.txt".format(p_id, fix, L), "p{}_val_acc{}_L{}.txt".format(p_id, fix, L),
-                            "p{}_loss{}_L{}.txt".format(p_id, fix, L), "p{}_val_loss{}_L{}.txt".format(p_id, fix, L)]
+            record_files = ["pid{}_acc{}_L{}.txt".format(p_id, fix, L), "pid{}_val_acc{}_L{}.txt".format(p_id, fix, L),
+                            "pid{}_loss{}_L{}.txt".format(p_id, fix, L), "pid{}_val_loss{}_L{}.txt".format(p_id, fix, L)]
             record_dirs = list(map(lambda f: join(cur_dir, DATASET, "record", f), record_files))
             all_record_dirs.append(record_dirs)
             p = mp.Process(target=train, args=(data_dirs, D, model),
-                           kwargs={"time_file": time_file, "record_files": record_files, "p_id": p_id})
+                           kwargs={"time_file": time_file, "record_files": record_dirs, "p_id": p_id})
             p.start()
             processes.append(p)
         for p in processes:
@@ -184,10 +184,10 @@ if __name__ == '__main__':
             valacc.append(np.loadtxt(fnames[1]))
             loss.append(np.loadtxt(fnames[2]))
             valloss.append(np.loadtxt(fnames[3]))
-        acc = np.mean(np.array(acc), axis=1).ravel()
-        valacc = np.mean(np.array(valacc), axis=1).ravel()
-        loss = np.mean(np.array(loss), axis=1).ravel()
-        valloss = np.mean(np.array(valloss), axis=1).ravel()
+        acc = np.mean(np.array(acc), axis=0).ravel()
+        valacc = np.mean(np.array(valacc), axis=0).ravel()
+        loss = np.mean(np.array(loss), axis=0).ravel()
+        valloss = np.mean(np.array(valloss), axis=0).ravel()
 
         acc_name = join(cur_dir, DATASET, "record", "[ASYNC]acc{}_L{}.txt".format(fix, L))
         valacc_name = join(cur_dir, DATASET, "record", "[ASYNC]val_acc{}_L{}.txt".format(fix, L))

@@ -28,7 +28,7 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
 
         plt.plot(train_axis, baseline_acc, label="Train(baseline)", color="r", zorder=1)
         plt.plot(val_axis, baseline_val, label="Test(baseline)", color="g", zorder=2)
-        fig_name = join(record_dir, "pic_{}_L{}.png".format(metric, L))
+        fig_name = join(record_dir, "{}pic_{}_L{}.png".format(async_fix, metric, L))
 
     for k in K_arr:
         acc = np.loadtxt(join(record_dir, "{}{}_K{}_L{}.txt".format(async_fix, metric, k, L)))
@@ -40,7 +40,7 @@ def plot_experiment(K_arr, L, metric="acc", baseline=True):
 
         plt.plot(train_axis, acc, label="Train(K={})".format(k), zorder=1)
         plt.plot(val_axis, val_acc, label="Test(K={})".format(k), zorder=2)
-        fig_name = join(record_dir, "pic_{}_K{}_L{}.png".format(metric, k, L))
+        fig_name = join(record_dir, "{}pic_{}_K{}_L{}.png".format(async_fix, metric, k, L))
 
     plt.title(title)
     plt.xlabel("Iteration")
