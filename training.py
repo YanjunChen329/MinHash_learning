@@ -30,8 +30,8 @@ results = parser.parse_args()
 # ===========================================================
 # Global variables & Hyper-parameters
 # ===========================================================
-dataset = results.dataset
-async = results.async
+DATASET = results.dataset
+ASYNC = results.async
 MH = results.MH
 K = results.K
 L = results.L
@@ -39,11 +39,11 @@ EPOCH = results.epoch
 BATCH_SIZE = results.batch_size
 GPU_IN_USE = True  # whether using GPU
 
-with open(join(cur_dir, dataset, "data", "dim.txt"), "r+") as infile:
+with open(join(cur_dir, DATASET, "data", "dim.txt"), "r+") as infile:
     D = int(infile.readline())
 
 
-def train(data_files, dim, model, time_file=None, record_files=None):
+def train(data_files, dim, model, time_file=None, record_files=None, p_id=None):
     # ===========================================================
     # Prepare train dataset & test dataset
     # ===========================================================
@@ -103,7 +103,7 @@ def train(data_files, dim, model, time_file=None, record_files=None):
 
     if time_file is not None:
         with open(time_file, 'a+') as outfile:
-            prefix = "(ASYNC) " if async else ""
+            prefix = "(ASYNC, id={}) ".format(p_id) if ASYNC else ""
             if MH:
                 outfile.write("{}K={},   L={}, epoch={} | time={}\n".format(prefix, K, L, EPOCH, training_time))
             else:
@@ -137,7 +137,7 @@ def validation(model, validation_dataloader, loss_func):
 
 
 if __name__ == '__main__':
-    print("dataset={}; asycn={}; MH={}; K={}; L={}; epoch={}; batch_size={}".format(dataset, async, MH, K, L, EPOCH, BATCH_SIZE))
+    print("dataset={}; async={}; MH={}; K={}; L={}; epoch={}; batch_size={}".format(DATASET, ASYNC, MH, K, L, EPOCH, BATCH_SIZE))
 
     #########################################
     print("***** prepare model ******")
@@ -150,23 +150,50 @@ if __name__ == '__main__':
 
     fix = "_K{}".format(K) if MH else ""
     data_files = ["train{}_X.txt".format(fix), "train_y.txt", "test{}_X.txt".format(fix), "test_y.txt"]
-    data_dirs = list(map(lambda f: join(cur_dir, dataset, "data", f), data_files))
+    data_dirs = list(map(lambda f: join(cur_dir, DATASET, "data", f), data_files))
     print(data_files)
-    record_files = ["acc{}_L{}.txt".format(fix, L), "val_acc{}_L{}.txt".format(fix, L),
-                    "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L)]
-    time_file = join(cur_dir, dataset, "record", "time_record.txt")
-    record_dirs = list(map(lambda f: join(cur_dir, dataset, "record", f), record_files))
+    time_file = join(cur_dir, DATASET, "record", "time_record.txt")
 
-    if not async:
+    if not ASYNC:
+        record_files = ["acc{}_L{}.txt".format(fix, L), "val_acc{}_L{}.txt".format(fix, L),
+                        "loss{}_L{}.txt".format(fix, L), "val_loss{}_L{}.txt".format(fix, L)]
+        record_dirs = list(map(lambda f: join(cur_dir, DATASET, "record", f), record_files))
         train(data_dirs, D, model, time_file, record_dirs)
     else:
         mp.set_start_method('spawn')
         num_processes = 4
         model.share_memory()
         processes = []
-        for rank in range(num_processes):
-            p = mp.Process(target=train, args=(data_dirs, D, model, time_file))
+        all_record_dirs = []
+        for p_id in range(num_processes):
+            record_files = ["p{}_acc{}_L{}.txt".format(p_id, fix, L), "p{}_val_acc{}_L{}.txt".format(p_id, fix, L),
+                            "p{}_loss{}_L{}.txt".format(p_id, fix, L), "p{}_val_loss{}_L{}.txt".format(p_id, fix, L)]
+            record_dirs = list(map(lambda f: join(cur_dir, DATASET, "record", f), record_files))
+            all_record_dirs.append(record_dirs)
+            p = mp.Process(target=train, args=(data_dirs, D, model),
+                           kwargs={"time_file": time_file, "record_files": record_files, "p_id": p_id})
             p.start()
             processes.append(p)
         for p in processes:
             p.join()
+
+        # File combination
+        acc, valacc, loss, valloss = [], [], [], []
+        for fnames in all_record_dirs:
+            acc.append(np.loadtxt(fnames[0]))
+            valacc.append(np.loadtxt(fnames[1]))
+            loss.append(np.loadtxt(fnames[2]))
+            valloss.append(np.loadtxt(fnames[3]))
+        acc = np.mean(np.array(acc), axis=1).ravel()
+        valacc = np.mean(np.array(valacc), axis=1).ravel()
+        loss = np.mean(np.array(loss), axis=1).ravel()
+        valloss = np.mean(np.array(valloss), axis=1).ravel()
+
+        acc_name = join(cur_dir, DATASET, "record", "[ASYNC]acc{}_L{}.txt".format(fix, L))
+        valacc_name = join(cur_dir, DATASET, "record", "[ASYNC]val_acc{}_L{}.txt".format(fix, L))
+        loss_name = join(cur_dir, DATASET, "record", "[ASYNC]loss{}_L{}.txt".format(fix, L))
+        valloss_name = join(cur_dir, DATASET, "record", "[ASYNC]val_loss{}_L{}.txt".format(fix, L))
+        np.savetxt(acc_name, acc)
+        np.savetxt(valacc_name, valacc)
+        np.savetxt(loss_name, loss)
+        np.savetxt(valloss_name, valloss)
