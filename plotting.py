@@ -5,9 +5,12 @@ cur_dir = dirname(abspath(__file__))
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--async', action="store", dest="async", type=bool, default=False)
-parser.add_argument('--K', action="append", dest="K", type=int, default=[])
-parser.add_argument('--L', action="store", dest="L", type=int, default=3)
+parser.add_argument('--async', action="store", dest="async", type=bool, default=False,
+                    help="Type True/False to plot async SGD/normal training. Default False")
+parser.add_argument('--K', action="append", dest="K", type=int, default=[],
+                    help="K-minhash file to plot. The corresponding experiment should be run already")
+parser.add_argument('--L', action="store", dest="L", type=int, default=3,
+                    help="L-layer FCNN to plot. Default 3")
 
 results = parser.parse_args()
 

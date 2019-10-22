@@ -16,13 +16,22 @@ cur_dir = dirname(abspath(__file__))
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--async', action="store", dest="async", type=bool, default=False)
-parser.add_argument('--MH', action="store", dest="MH", type=bool, default=False)
-parser.add_argument('--K', action="store", dest="K", type=int, default=1000)
-parser.add_argument('--L', action="store", dest="L", type=int, default=3)
-parser.add_argument('--dataset', action="store", dest="dataset", default="rcv1")
-parser.add_argument('--epoch', action="store", dest="epoch", type=int, default=10)
-parser.add_argument('--batch', action="store", dest="batch_size", type=int, default=100)
+parser.add_argument('--async', action="store", dest="async", type=bool, default=False,
+                    help="Type True/False to turn on/off the async SGD. Default False")
+parser.add_argument("--process", action="store", dest="process", type=int, default=4,
+                    help="Number of processes to use if asynchronous SGD is turned on. Default 4")
+parser.add_argument('--MH', action="store", dest="MH", type=bool, default=False,
+                    help="Type True/False to use MinHash/feature hashing files as input. Default False")
+parser.add_argument('--K', action="store", dest="K", type=int, default=1000,
+                    help="K minhashes to use. The corresponding minhash file should be generated already. Default 1000")
+parser.add_argument('--L', action="store", dest="L", type=int, default=3,
+                    help="L layers of fully connected neural network to use. Default 3")
+parser.add_argument('--dataset', action="store", dest="dataset", default="rcv1",
+                    help="Dataset folder to use. Default rcv1")
+parser.add_argument('--epoch', action="store", dest="epoch", type=int, default=10,
+                    help="Number of epochs for training. Default 10")
+parser.add_argument('--batch', action="store", dest="batch_size", type=int, default=100,
+                    help="Batch size to use. Default 100")
 
 results = parser.parse_args()
 
@@ -32,6 +41,7 @@ results = parser.parse_args()
 # ===========================================================
 DATASET = results.dataset
 ASYNC = results.async
+PROCESS = results.process
 MH = results.MH
 K = results.K
 L = results.L
@@ -137,7 +147,7 @@ def validation(model, validation_dataloader, loss_func):
 
 
 if __name__ == '__main__':
-    print("dataset={}; async={}; MH={}; K={}; L={}; epoch={}; batch_size={}".format(DATASET, ASYNC, MH, K, L, EPOCH, BATCH_SIZE))
+    print("dataset={}; async={}; num_process={} ; MH={}; K={}; L={}; epoch={}; batch_size={}".format(DATASET, ASYNC, PROCESS, MH, K, L, EPOCH, BATCH_SIZE))
 
     #########################################
     print("***** prepare model ******")
@@ -161,11 +171,10 @@ if __name__ == '__main__':
         train(data_dirs, D, model, time_file, record_dirs)
     else:
         mp.set_start_method('spawn')
-        num_processes = 4
         model.share_memory()
         processes = []
         all_record_dirs = []
-        for p_id in range(num_processes):
+        for p_id in range(PROCESS):
             record_files = ["pid{}_acc{}_L{}.txt".format(p_id, fix, L), "pid{}_val_acc{}_L{}.txt".format(p_id, fix, L),
                             "pid{}_loss{}_L{}.txt".format(p_id, fix, L), "pid{}_val_loss{}_L{}.txt".format(p_id, fix, L)]
             record_dirs = list(map(lambda f: join(cur_dir, DATASET, "record", f), record_files))
