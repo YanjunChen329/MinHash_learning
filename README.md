@@ -47,6 +47,7 @@ optional arguments:
   --epoch EPOCH       Number of epochs for training. Default 10
   --batch BATCH_SIZE  Batch size to use. Default 100
 ```
+After each run of training.py, several files will be stored under ./rcv1/record as the records of training. Users should use plotting.py (next session) to plot information about training/validation accuracy and loss. Besides accuracy and loss, users can also check the training time in time_record.txt under ./rcv1/record/. Each line in time_record.txt represents the time for one training process. The file will accumulate as user runs more experiments.
 
 ### 3. Plotting the result
 
@@ -64,5 +65,7 @@ optional arguments:
                  be run already
   --L L          L-layer FCNN to plot. Default 3
 ```
-Before plotting on any given ASYNC, K and L, user should run experiments with the same ASYNC, K and L using training.py. Note that plotting.py would in default plot the minhash result with feature hashing result, so be sure to run both experiments before plotting with a K. If users left the K argument unwritten, the script will only plot results from feature hashing. The plot will be saved under ./rcv1/record/
+Before plotting on any given ASYNC, K and L, user should run experiments with the same ASYNC, K and L using training.py. Note that plotting.py would in default plot the minhash result with feature hashing result, so be sure to run both experiments before plotting with a K. If users left the K argument unwritten, the script will only plot results from feature hashing experiment. The plot will be saved under ./rcv1/record/
+
+
 
