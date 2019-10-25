@@ -39,7 +39,7 @@ class Densified_MinHash():
                 while k_hashes[new_bin] == -1:
                     attempt += 1
                     new_bin = self.hash_bin_to_bin(idx, attempt, self.seed)
-                k_hashes[idx] = k_hashes[new_bin]
+                k_hashes[idx] = ((idx + 4 * attempt) + (k_hashes[new_bin] + 3 * attempt)) % int(self.D)
         return k_hashes
 
 if __name__ == '__main__':
